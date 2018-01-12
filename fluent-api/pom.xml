@@ -17,12 +17,6 @@
 		JAXB2 implementation.
 	</description>
 
-	<parent>
-		<groupId>org.sonatype.oss</groupId>
-		<artifactId>oss-parent</artifactId>
-		<version>7</version>
-	</parent>
-  
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
@@ -43,12 +37,6 @@
         </contributor>
     </contributors>
 
-	<scm>
-		<connection>scm:svn:https://svn.java.net/svn/jaxb2-commons~svn/fluent-api/trunk</connection>
-		<developerConnection>scm:svn:https://svn.java.net/svn/jaxb2-commons~svn/fluent-api/trunk</developerConnection>
-		<url>http://java.net/projects/jaxb2-commons/sources/svn/show/fluent-api/trunk</url>
-	</scm>
-	
 	<dependencies>
 		<dependency>  
 			<groupId>com.sun.xml.bind</groupId>
@@ -74,6 +62,7 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
+				<version>2.2.1</version>
 				<executions>
 					<execution>
 						<id>attach-source</id>
@@ -85,5 +74,14 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<!-- Repositories to publish artifacts -->
+	<distributionManagement>
+		<repository>
+			<uniqueVersion>false</uniqueVersion>
+			<id>inhouse</id>
+			<url>${publish.url}</url>
+		</repository>
+	</distributionManagement>
 
 </project>
