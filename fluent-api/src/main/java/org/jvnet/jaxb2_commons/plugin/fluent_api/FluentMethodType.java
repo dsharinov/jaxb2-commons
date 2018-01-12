@@ -15,9 +15,6 @@
  */
 package org.jvnet.jaxb2_commons.plugin.fluent_api;
 
-import java.util.Collection;
-import java.util.List;
-
 import com.sun.codemodel.JBlock;
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JConditional;
@@ -29,6 +26,9 @@ import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
 import com.sun.codemodel.JType;
 import com.sun.codemodel.JVar;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * @author Hanson Char
@@ -100,12 +100,14 @@ public enum FluentMethodType {
             JConditional cond = body._if(
                                         jvarParam.ne(
                                             JExpr._null()));
+            JBlock condThen = cond._then();
+			JVar list = buildListBlock(implClass, fluentMethodInfo, returnJType, typeParam, condThen);
 	        JForEach forEach = cond._then()
                                    .forEach(
                                        typeParam, VALUE, JExpr.ref(VALUES));
 	        JInvocation addInvocation = forEach.body()
                                                .invoke(
-                                                   JExpr.invoke(listGetterMethod), "add");
+                                                   list, "add");
 	        addInvocation.arg(
                             JExpr.ref(VALUE));
 	        // and return "this"
@@ -113,6 +115,7 @@ public enum FluentMethodType {
                     JExpr._this());
 	        return;
 	    }
+
 	},
 	FLUENT_COLLECTION_SETTER
 	{
@@ -147,9 +150,11 @@ public enum FluentMethodType {
             JConditional cond = body._if(
                                         jvarParam.ne(
                                             JExpr._null()));
-	        JInvocation addInvocation = cond._then()
+			JBlock condThen = cond._then();
+			JVar list = buildListBlock(implClass, fluentMethodInfo, returnJType, typeParam, condThen);
+	        JInvocation addInvocation = condThen
                                                .invoke(
-                                                   JExpr.invoke(listGetterMethod), "addAll");
+                                                   list, "addAll");
 	        addInvocation.arg(jvarParam);
 	        // and return "this"
 	        body._return(
@@ -158,7 +163,8 @@ public enum FluentMethodType {
 	    }
 	}
 	;
-    private static final String VALUE = "value";
+	public static final String LIST_VAR_NAME = "list";
+	private static final String VALUE = "value";
 	private static final String VALUES = "values";
 	public static final String GETTER_METHOD_PREFIX = "get";
     public static final String SETTER_METHOD_PREFIX = "set";
@@ -167,6 +173,27 @@ public enum FluentMethodType {
     
     public static final int SETTER_METHOD_PREFIX_LEN = SETTER_METHOD_PREFIX.length();
     public static final int GETTER_METHOD_PREFIX_LEN = GETTER_METHOD_PREFIX.length();
-    
+
     public abstract void createFluentMethod(JDefinedClass implClass, FluentMethodInfo fluentMethodInfo);
+
+	private static JVar buildListBlock(JDefinedClass implClass, FluentMethodInfo fluentMethodInfo,
+									   JType returnJType, JClass typeParam, JBlock block) {
+		JMethod listGetterMethod = fluentMethodInfo.getJmethod();
+		String name = listGetterMethod.name();
+		JVar list = block.decl(returnJType, LIST_VAR_NAME, JExpr.invoke(listGetterMethod));
+		JClass listImplType = fluentMethodInfo.getListImplType().narrow(typeParam);
+		if (listImplType != null) {
+			String listSetterName = SETTER_METHOD_PREFIX + name.substring(GETTER_METHOD_PREFIX_LEN);
+			JMethod listSetter = implClass.getMethod(listSetterName, new JType[] {returnJType});
+			if (listSetter != null) {
+				JBlock listInitBlock = block._if(list.eq(JExpr._null()))
+						._then();
+				listInitBlock.assign(list, JExpr._new(listImplType));
+				JInvocation listSetterInvocation = listInitBlock.invoke(listSetter);
+				listSetterInvocation.arg(list);
+			}
+		}
+		return list;
+	}
+
 }

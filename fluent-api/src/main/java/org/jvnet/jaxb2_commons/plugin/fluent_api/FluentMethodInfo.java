@@ -15,6 +15,7 @@
  */
 package org.jvnet.jaxb2_commons.plugin.fluent_api;
 
+import com.sun.codemodel.JClass;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JMethod;
 
@@ -30,15 +31,22 @@ public class FluentMethodInfo {
 	private final boolean isOverride;
 	// Type of fluent API method to be generated.
 	private final FluentMethodType fluentMethodType;
+	// True if the list should be initialized in array/collection setter
+	private final JClass listImplType;
 	
-	public FluentMethodInfo(JMethod jmethod, FluentMethodType fluentMethodType, boolean isOverride) 
+	public FluentMethodInfo(JMethod jmethod, FluentMethodType fluentMethodType, boolean isOverride, JClass listImplType)
 	{
 		this.jmethod = jmethod;
 		this.fluentMethodType = fluentMethodType;
 		this.isOverride = isOverride;
+		this.listImplType = listImplType;
 	}
-	
-	/** Creates a fluent API method in the given class. */ 
+
+	public FluentMethodInfo(JMethod jmethod, FluentMethodType fluentMethodType, boolean isOverride) {
+		this(jmethod, fluentMethodType, isOverride, null);
+	}
+
+	/** Creates a fluent API method in the given class. */
 	public void createFluentMethod(JDefinedClass implClass) {
 		fluentMethodType.createFluentMethod(implClass, this);
 	}
@@ -51,5 +59,10 @@ public class FluentMethodInfo {
 	/** Returns the original method for which a fluent API method will be generated. */
 	public JMethod getJmethod() {
 		return jmethod;
+	}
+
+	// Returns true if the list should be initialized in array/collection setter
+	public JClass getListImplType() {
+		return listImplType;
 	}
 }
